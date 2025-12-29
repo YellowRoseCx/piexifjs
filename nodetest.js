@@ -115,9 +115,11 @@ try {
     delete exifObj2["thumbnail"];
     phestum.assertEqual(exifObj, exifObj2);
     console.log("Successed Nodejs test.");
-    process.exit();
 } catch (e){
     console.log(e);
     console.log("Failed Nodejs test.");
     process.exit(1);
 }
+
+// Run PNG tests
+require("./tests/test_comments.js");

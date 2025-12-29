@@ -3,6 +3,7 @@
 The MIT License (MIT)
 
 Copyright (c) 2014, 2015 hMatoba(https://github.com/hMatoba)
+Copyright (c) 2025 YellowRoseCx(https://github.com/YellowRoseCx)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,54 +27,112 @@ SOFTWARE.
 (function () {
     "use strict";
     var that = {};
-    that.version = "1.0.4";
+    that.version = "3.0.0";
 
-    that.remove = function (jpeg) {
+    that.remove = function (image) {
         var b64 = false;
-        if (jpeg.slice(0, 2) == "\xff\xd8") {
-        } else if (jpeg.slice(0, 23) == "data:image/jpeg;base64," || jpeg.slice(0, 22) == "data:image/jpg;base64,") {
-            jpeg = atob(jpeg.split(",")[1]);
+        if (image.slice(0, 2) == "\xff\xd8") {
+        } else if (image.slice(0, 23) == "data:image/jpeg;base64," || image.slice(0, 22) == "data:image/jpg;base64,") {
+            image = atob(image.split(",")[1]);
+            b64 = true;
+        } else if (image.slice(0, 8) == "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a") {
+        } else if (image.slice(0, 22) == "data:image/png;base64,") {
+            image = atob(image.split(",")[1]);
             b64 = true;
         } else {
             throw new Error("Given data is not jpeg.");
         }
         
-        var segments = splitIntoSegments(jpeg);
-        var newSegments = segments.filter(function(seg){
-          return  !(seg.slice(0, 2) == "\xff\xe1" &&
-                   seg.slice(4, 10) == "Exif\x00\x00"); 
-        });
-        
-        var new_data = newSegments.join("");
-        if (b64) {
-            new_data = "data:image/jpeg;base64," + btoa(new_data);
-        }
+        var new_data;
+        if (image.slice(0, 2) == "\xff\xd8") {
+            var segments = splitIntoSegments(image);
+            var newSegments = segments.filter(function(seg){
+              return  !(seg.slice(0, 2) == "\xff\xe1" &&
+                       seg.slice(4, 10) == "Exif\x00\x00"); 
+            });
+            
+            new_data = newSegments.join("");
+            if (b64) {
+                new_data = "data:image/jpeg;base64," + btoa(new_data);
+            }
 
-        return new_data;
+            return new_data;
+        } else if (image.slice(0, 8) == "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a") {
+            var chunks = splitIntoPngChunks(image);
+            var newChunks = chunks.filter(function(chunk){
+                return chunk.type != "eXIf";
+            });
+            new_data = "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a" + newChunks.map(function(c){return c.full;}).join("");
+            if (b64) {
+                new_data = "data:image/png;base64," + btoa(new_data);
+            }
+            return new_data;
+        }
     };
 
 
-    that.insert = function (exif, jpeg) {
+    that.insert = function (exif, image) {
         var b64 = false;
+        var type = "jpeg";
         if (exif.slice(0, 6) != "\x45\x78\x69\x66\x00\x00") {
             throw new Error("Given data is not exif.");
         }
-        if (jpeg.slice(0, 2) == "\xff\xd8") {
-        } else if (jpeg.slice(0, 23) == "data:image/jpeg;base64," || jpeg.slice(0, 22) == "data:image/jpg;base64,") {
-            jpeg = atob(jpeg.split(",")[1]);
+        if (image.slice(0, 2) == "\xff\xd8") {
+        } else if (image.slice(0, 23) == "data:image/jpeg;base64," || image.slice(0, 22) == "data:image/jpg;base64,") {
+            image = atob(image.split(",")[1]);
+            b64 = true;
+        } else if (image.slice(0, 8) == "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a") {
+            type = "png";
+        } else if (image.slice(0, 22) == "data:image/png;base64,") {
+            type = "png";
+            image = atob(image.split(",")[1]);
             b64 = true;
         } else {
             throw new Error("Given data is not jpeg.");
         }
 
-        var exifStr = "\xff\xe1" + pack(">H", [exif.length + 2]) + exif;
-        var segments = splitIntoSegments(jpeg);
-        var new_data = mergeSegments(segments, exifStr);
-        if (b64) {
-            new_data = "data:image/jpeg;base64," + btoa(new_data);
-        }
+        var new_data;
+        if (type == "jpeg") {
+            var exifStr = "\xff\xe1" + pack(">H", [exif.length + 2]) + exif;
+            var segments = splitIntoSegments(image);
+            new_data = mergeSegments(segments, exifStr);
+            if (b64) {
+                new_data = "data:image/jpeg;base64," + btoa(new_data);
+            }
+            return new_data;
+        } else if (type == "png") {
+            var chunks = splitIntoPngChunks(image);
+            var newChunks = [];
+            var newExif = exif.slice(6);
+            var len = newExif.length;
+            var chunkType = "eXIf";
+            var crc = crc32(chunkType + newExif);
+            var exifChunk = pack(">L", [len]) + chunkType + newExif + pack(">L", [crc]);
+            
+            var inserted = false;
+            chunks.forEach(function(chunk) {
+                if (chunk.type == "eXIf") {
+                    return; // skip existing exif
+                }
+                if (!inserted && chunk.type == "IHDR") {
+                    newChunks.push(chunk.full);
+                    newChunks.push(exifChunk);
+                    inserted = true;
+                } else {
+                    newChunks.push(chunk.full);
+                }
+            });
+            
+            if (!inserted) { // Should be inserted after IHDR, so if we didn't see IHDR, something is wrong, but just in case
+                newChunks.push(exifChunk);
+            }
 
-        return new_data;
+            new_data = "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a" + newChunks.join("");
+            if (b64) {
+                new_data = "data:image/png;base64," + btoa(new_data);
+            }
+            return new_data;
+        }
     };
 
 
@@ -86,6 +145,10 @@ SOFTWARE.
                 input_data = atob(data.split(",")[1]);
             } else if (data.slice(0, 4) == "Exif") {
                 input_data = data.slice(6);
+            } else if (data.slice(0, 8) == "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a") {
+                input_data = data;
+            } else if (data.slice(0, 22) == "data:image/png;base64,") {
+                input_data = atob(data.split(",")[1]);
             } else {
                 throw new Error("'load' gots invalid file data.");
             }
@@ -457,6 +520,18 @@ SOFTWARE.
             if (typeof (raw_value) == "number") {
                 raw_value = [raw_value];
             }
+
+            // Special handling for UserComment (37510) to ensure valid encoding header
+            if (key == 37510 && ifd == "Exif" && typeof raw_value == "string") {
+                var first8 = raw_value.slice(0, 8);
+                if (first8 != "ASCII\x00\x00\x00" && 
+                    first8 != "JIS\x00\x00\x00\x00\x00" && 
+                    first8 != "UNICODE\x00" && 
+                    first8 != "\x00\x00\x00\x00\x00\x00\x00\x00") {
+                    raw_value = "ASCII\x00\x00\x00" + raw_value;
+                }
+            }
+
             var offset = TIFF_HEADER_LENGTH + entries_length + ifd_offset + values.length;
             var b = _value_to_bytes(raw_value, value_type, offset);
             var length_str = b[0];
@@ -480,6 +555,20 @@ SOFTWARE.
             app1 = getExifSeg(segments);
             if (app1) {
                 this.tiftag = app1.slice(10);
+            } else {
+                this.tiftag = null;
+            }
+        } else if (data.slice(0, 8) == "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a") { // PNG
+            var chunks = splitIntoPngChunks(data);
+            var exif = null;
+            for (var i = 0; i < chunks.length; i++) {
+                if (chunks[i].type == "eXIf") {
+                    exif = chunks[i].data;
+                    break;
+                }
+            }
+            if (exif) {
+                this.tiftag = exif;
             } else {
                 this.tiftag = null;
             }
@@ -518,6 +607,12 @@ SOFTWARE.
                 var v_set = [value_type, value_num, value];
                 if (tag in TAGS[t]) {
                     ifd_dict[tag] = this.convert_value(v_set);
+                    if (tag == 37510 && t == "Exif") {
+                        var uc = ifd_dict[tag];
+                        if (typeof uc == "string" && uc.slice(0, 8) == "ASCII\x00\x00\x00") {
+                            ifd_dict[tag] = uc.slice(8);
+                        }
+                    }
                 }
             }
 
@@ -911,6 +1006,47 @@ SOFTWARE.
             }
         }
         return segments;
+    }
+
+
+    var crcTable = [];
+    for (var n = 0; n < 256; n++) {
+        var c = n;
+        for (var k = 0; k < 8; k++) c = ((c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
+        crcTable[n] = c;
+    }
+
+    function crc32(buf) {
+        var crc = 0 ^ (-1);
+        for (var i = 0; i < buf.length; i++) {
+            crc = (crc >>> 8) ^ crcTable[(crc ^ buf.charCodeAt(i)) & 0xFF];
+        }
+        return (crc ^ (-1)) >>> 0;
+    }
+
+    function splitIntoPngChunks(data) {
+        if (data.slice(0, 8) != "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a") {
+            throw new Error("Given data isn't PNG.");
+        }
+
+        var chunks = [];
+        var p = 8;
+        while (p < data.length) {
+            var len = unpack(">L", data.slice(p, p + 4))[0];
+            var type = data.slice(p + 4, p + 8);
+            var chunkData = data.slice(p + 8, p + 8 + len);
+            var crc = data.slice(p + 8 + len, p + 8 + len + 4);
+            
+            chunks.push({
+                len: len,
+                type: type,
+                data: chunkData,
+                crc: crc,
+                full: data.slice(p, p + 12 + len)
+            });
+            p += 12 + len;
+        }
+        return chunks;
     }
 
 
@@ -1839,7 +1975,7 @@ SOFTWARE.
             },
             37510: {
                 'name': 'UserComment',
-                'type': 'Ascii'
+                'type': 'Undefined'
             },
             37520: {
                 'name': 'SubSecTime',

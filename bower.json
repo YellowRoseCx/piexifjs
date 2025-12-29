@@ -3,14 +3,15 @@
   "description": "Read and write exif.",
   "main": "piexif.js",
   "authors": [
-    "hMatoba"
+    "YellowRoseCx"
   ],
   "license": "MIT",
   "keywords": [
     "jpeg",
+    "png",
     "exif"
   ],
-  "homepage": "https://github.com/hMatoba/piexifjs",
+  "homepage": "https://github.com/YellowRoseCx/piexifjs",
   "moduleType": [],
   "ignore": [
     "**/*",

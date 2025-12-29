@@ -2,8 +2,8 @@
 Samples
 =======
 
-Insert Exif into jpeg
----------------------
+Insert Exif into jpeg or png
+----------------------------
 
 ::
 

@@ -1,6 +1,12 @@
 Changelog
 =========
 
+3.0.0
+-----
+
+- Add native PNG support.
+- Fix UserComment encoding.
+
 1.0.6
 -----
 
@@ -19,7 +25,7 @@ Changelog
 1.01
 ----
 
-- Bug fix. https://github.com/hMatoba/piexifjs/issues/9
+- Bug fix. https://github.com/YellowRoseCx/piexifjs/issues/9
 
 1.0
 ---

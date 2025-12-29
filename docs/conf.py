@@ -20,13 +20,13 @@
 # -- Project information -----------------------------------------------------
 
 project = 'piexifjs'
-copyright = '2018, hMatoba'
-author = 'hMatoba'
+copyright = '2018, YellowRoseCx'
+author = 'YellowRoseCx'
 
 # The short X.Y version
-version = ''
+version = '3.0'
 # The full version, including alpha/beta/rc tags
-release = '1.0'
+release = '3.0.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -129,7 +129,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'piexifjs.tex', 'piexifjs Documentation',
-     'hMatoba', 'manual'),
+     'YellowRoseCx', 'manual'),
 ]
 
 

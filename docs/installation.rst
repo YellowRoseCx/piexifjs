@@ -2,17 +2,14 @@
 Installation
 ============
 
-.. note:: Piexif supports Python versions 2.7, 3.3, 3.4, Pypy, Pypy3
+NPM::
 
+    $ npm install git+https://github.com/YellowRoseCx/piexifjs.git
 
-'easy_install'::
+Bower::
 
-    $ easy_install piexif
+    $ bower install https://github.com/YellowRoseCx/piexifjs.git
 
-or 'pip'::
+CDN::
 
-    $ pip install piexif
-
-or download .zip, extract it and run::
-
-    $ python setup.py install
+    <script src="https://unpkg.com/piexifjs@2.0.0/piexif.js"></script>

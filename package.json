@@ -1,20 +1,30 @@
 {
   "name": "piexifjs",
-  "version": "1.0.6",
-  "description": "Read and write exif.",
+  "version": "3.0.0",
+  "description": "Read and write exif (JPEG and PNG).",
+  "scripts": {
+    "test": "node nodetest.js"
+  },
   "main": "piexif.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hMatoba/piexifjs.git"
+    "url": "https://github.com/YellowRoseCx/piexifjs.git"
   },
   "keywords": [
     "jpeg",
+    "png",
     "exif"
   ],
-  "author": "hMatoba",
+  "author": "YellowRoseCx",
+  "contributors": [
+    {
+      "name": "hMatoba",
+      "url": "https://github.com/hMatoba"
+    }
+  ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/hMatoba/piexifjs/issues"
+    "url": "https://github.com/YellowRoseCx/piexifjs/issues"
   },
-  "homepage": "https://github.com/hMatoba/piexifjs"
+  "homepage": "https://github.com/YellowRoseCx/piexifjs"
 }

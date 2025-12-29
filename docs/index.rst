@@ -6,11 +6,12 @@
 Welcome to Piexifjs's documentation!
 ==================================
 
-.. image:: https://travis-ci.org/hMatoba/piexifjs.svg?branch=master
-   :target: https://travis-ci.org/hMatoba/piexifjs
+.. image:: https://travis-ci.org/YellowRoseCx/piexifjs.svg?branch=master
+   :target: https://travis-ci.org/YellowRoseCx/piexifjs
 
 Exif manipulations with JavaScript. Writing, reading, and more... For client-side and Node.js.
-https://github.com/hMatoba/piexifjs
+Supports JPEG and PNG.
+https://github.com/YellowRoseCx/piexifjs
 
 .. toctree::
    :maxdepth: 2

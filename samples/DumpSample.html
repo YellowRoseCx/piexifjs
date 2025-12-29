@@ -20,7 +20,7 @@
       
     function handleFileSelect(evt) {
         var f = evt.target.files[0]; // FileList object
-        if (!f.type.match('image/jpeg.*')) {
+        if (!f.type.match('image/jpeg.*') && !f.type.match('image/png.*')) {
             return;
         }
         
@@ -75,7 +75,7 @@
 </head>
 <body>
     <div id="up">
-        JPEG FILES ONLY<br>
+        JPEG or PNG FILES ONLY<br>
         <input type="file" id="files" class="form" onchange="handleFileSelect(event);" />
         <div id="keika"></div>
     </div>
